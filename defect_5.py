@@ -9,6 +9,7 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+import matplotlib
 import subprocess
 import os
 from scipy import integrate
@@ -378,6 +379,244 @@ def intensity(n_range, s_range,  G, B, a_lattice, contrast_factor, average_defec
 	plt.savefig(plotname_intensity_vs_s)
 	plt.close()
 
+
+# Creates an approximation of the possible effect of the intensity profile on the Debye-Waller effect. This is done by reading in the intensity vs S data for each plot, and simulating 
+def estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot_I_vs_C, plot_I_vs_C_no_zero, plot_normI_vs_C_no_zero):
+
+	print "\nEstimating consequences of defects on Debye-Waller Temperature measurement..."
+	new_directory = os.getcwd() + "/effect_on_debye_waller/"
+	
+	subprocess.call("mkdir " + new_directory, shell=True)
+	
+
+
+	label = [0] * len(contrast_factor)
+	files = [0] * len(G)
+	gsqr = [0] * len(G)
+
+	for i in range(len(files)):
+
+		files[i] = [0] * len(contrast_factor)
+
+
+	for j in range(len(G)):
+	
+		gsqr[j] = (int(G[j][0]) ** 2) + (int(G[j][1]) ** 2) + (int(G[j][2]) ** 2)
+		 
+		print gsqr
+		
+		for i in range(len(contrast_factor)):
+
+			files[j][i] = str(os.getcwd()) + "/" + str(int(G[j][0]))  + str(int(G[j][1])) + str(int(G[j][2])) + "/contrast_" + str(contrast_factor[i]) + "/intensity_vs_S.dat"
+			label[i] = "Contrast " + str(contrast_factor[i])
+
+
+	intensity = [0] * len(G)
+	full_peak_intensity = [0] * len(G)
+	full_peak_s = [0] * len(G)
+	half_intensity = [0] * len(G)
+	del_intensity = [0] * len(G)
+	hwhm = [0] * len(G)
+	norm_integrated_intensity = [0] * len(G)
+	integrated_intensity = [0] * len(G)
+	intensity_over_hwhm = [0] * len(G)
+	norm_intensity_over_hwhm = [0] * len(G)
+	s = [0] * len(G)
+
+	for i in range(len(files)):
+		intensity[i] = [0] * len(contrast_factor)
+		full_peak_intensity[i] = [0] * len(contrast_factor)
+		full_peak_s[i] = [0] * len(contrast_factor)
+		half_intensity[i] = [0] * len(contrast_factor)
+		del_intensity[i] = [0] * len(contrast_factor)
+		hwhm[i] = [0] * len(contrast_factor)
+		norm_integrated_intensity[i] = [0] * len(contrast_factor)
+		integrated_intensity[i] = [0] * len(contrast_factor)
+		intensity_over_hwhm[i] = [0] * len(contrast_factor)
+		#norm_intensity_over_fwhm = [0] * len(contrast_factor)
+		s[i] = [0] * len(contrast_factor)
+
+
+	
+	for j in range(len(G)):
+
+		print G[j]
+
+		for i in range(len(contrast_factor)):
+		
+	
+			s[j][i], intensity[j][i] = np.loadtxt(files[j][i], skiprows=1, unpack=True, usecols=(0,1))
+
+
+			intermediate = np.delete(intensity[j][i], 0)
+
+
+			full_peak_intensity[j][i] = np.concatenate((intensity[j][i][::-1], intermediate), axis=0)
+
+
+			intermediate_2 = np.delete(s[j][i], 0)
+
+			full_peak_s[j][i] = np.concatenate((s[j][i][::-1], -intermediate_2), axis=0)
+
+		
+			central_s = 0.0
+		
+			sigma_guess = s[j][i][int(len(s[j][i])/2.0)]
+
+		
+			#popt = fit_gaussian(full_peak_s[j][i], full_peak_intensity[j][i], max(intensity[j][i]), central_s, sigma_guess)
+		
+			#hwhm[j][i] = np.sqrt(2 * np.log(2.0)) * popt[2]
+			"""
+			y = gaussian(s[j][i], popt[0], popt[1], popt[2])
+			plt.plot(s[j][i], y)
+			plt.scatter(s[j][i], intensity[j][i])
+			intersection = gaussian(hwhm[j][i], popt[0], popt[1], popt[2])
+			plt.scatter(hwhm[j][i], intersection, color="r")
+			plt.show()
+			plt.close()
+			"""
+			integrated_intensity[j][i] = sum(intensity[j][i])
+			norm_integrated_intensity[j][i] = integrated_intensity[j][i]/max(integrated_intensity[j])
+			#intensity_over_hwhm[j][i] = abs(integrated_intensity[j][i]/hwhm[j][i])
+
+		
+		#norm_intensity_over_hwhm[j] = intensity_over_hwhm[j]/max(intensity_over_hwhm[j])
+
+	max_gsqr_ind = np.argmax(gsqr)
+	min_gsqr_ind = np.argmin(gsqr)
+	
+	
+	if plot_normI_vs_C == True:
+	
+		plt.figure(figsize=(16,9))
+	
+		for j in range(len(G)):
+
+			colour = np.random.rand(1,3)
+			plt.scatter(contrast_factor, norm_integrated_intensity[j], color=colour, label=G[j])
+			plt.ylabel("Normalised integrated intensity (arb.)")
+			plt.xlabel("Contrast Factor")
+			
+			print "Min(norm_intensity)/max(norm_intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(norm_integrated_intensity[j])/max(norm_integrated_intensity[j]))	
+
+
+		plt.title( "Min(norm_intensity)/max(norm_intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(norm_integrated_intensity[max_gsqr_ind])/max(norm_integrated_intensity[max_gsqr_ind]))	)
+		plt.legend(loc="upper right")
+		plt.ylim(0.9*min(norm_integrated_intensity[max_gsqr_ind]), 1.1*max(norm_integrated_intensity[max_gsqr_ind]))
+		
+		plt.savefig(new_directory + "normI_vs_C.png", dpi=200)
+		plt.close()
+		
+
+		
+	if plot_I_vs_C == True:
+	
+		plt.figure(figsize=(16,9))
+	
+		for j in range(len(G)):
+
+			colour = np.random.rand(1,3)
+			plt.scatter(contrast_factor, integrated_intensity[j], color=colour, label=G[j])
+			plt.ylabel("Integrated intensity (arb.)")
+			plt.xlabel("Contrast Factor")
+			
+			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity[j])/max(integrated_intensity[j]))	
+
+
+		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(integrated_intensity[max_gsqr_ind])/max(integrated_intensity[max_gsqr_ind]))	)
+		plt.legend(loc="upper right")
+		plt.ylim(0.9*min(integrated_intensity[max_gsqr_ind]), 1.1*max(integrated_intensity[max_gsqr_ind]))
+		plt.savefig(new_directory + "I_vs_C.png", dpi=80)
+		plt.close()
+		
+		
+		
+		
+	if plot_I_vs_C_no_zero == True:
+	
+		plt.figure(figsize=(16,9))
+		contrast_factor_no_zero = np.delete(contrast_factor, 0)
+
+		integrated_intensity_no_zero = [0] * len(G)
+	
+		for j in range(len(G)):
+
+			colour = np.random.rand(1,3)
+
+			if np.count_nonzero(contrast_factor) == len(contrast_factor):
+
+				integrated_intensity_no_zero[j] = integrated_intensity[j]
+				
+			else:
+
+				integrated_intensity_no_zero[j] = np.delete(integrated_intensity[j], max(integrated_intensity[j]) )
+
+
+
+			plt.scatter(contrast_factor_no_zero, integrated_intensity_no_zero[j], color=colour, label=G[j])
+			plt.ylabel("Integrated intensity (arb.)")
+			plt.xlabel("Contrast Factor")
+			
+			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity_no_zero[j])/max(integrated_intensity_no_zero[j]))	
+
+
+		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(integrated_intensity_no_zero[max_gsqr_ind])/max(integrated_intensity_no_zero[max_gsqr_ind]))	)
+		plt.legend(loc="upper right")
+		plt.ylim(0.9*min(integrated_intensity_no_zero[max_gsqr_ind]), 1.1*max(integrated_intensity_no_zero[min_gsqr_ind]))
+		plt.savefig(new_directory + "I_vs_C_no_zero.png", dpi=80)
+		plt.close()
+	
+
+
+	if plot_normI_vs_C_no_zero == True:
+	
+		plt.figure(figsize=(16,9))
+		contrast_factor_no_zero = np.delete(contrast_factor, 0)
+
+		integrated_intensity_no_zero = [0] * len(G)
+		norm_integrated_intensity_no_zero = [0] * len(G)
+	
+		for j in range(len(G)):
+
+			colour = np.random.rand(1,3)
+
+			if np.count_nonzero(contrast_factor) == len(contrast_factor):
+
+				norm_integrated_intensity_no_zero[j] = integrated_intensity[j]
+				
+			else:
+
+				norm_integrated_intensity_no_zero[j] = np.delete(integrated_intensity[j], max(integrated_intensity[j]) )
+
+			print norm_integrated_intensity_no_zero
+			
+			normalise_constant = max(norm_integrated_intensity_no_zero[j])
+
+			for i in range(len(norm_integrated_intensity_no_zero[j])):
+
+				norm_integrated_intensity_no_zero[j][i] = norm_integrated_intensity_no_zero[j][i]/normalise_constant
+				
+			print norm_integrated_intensity_no_zero
+
+			plt.scatter(contrast_factor_no_zero, norm_integrated_intensity_no_zero[j], color=colour, label=G[j])
+			plt.ylabel("Normalised integrated intensity (arb.)")
+			plt.xlabel("Contrast Factor")
+			
+			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(norm_integrated_intensity_no_zero[j])/max(norm_integrated_intensity_no_zero[j]))	
+
+
+		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(norm_integrated_intensity_no_zero[max_gsqr_ind])/max(norm_integrated_intensity_no_zero[max_gsqr_ind])) )
+		plt.legend(loc="upper right")
+		plt.ylim(0.9*min(norm_integrated_intensity_no_zero[min_gsqr_ind]), 1.1*max(norm_integrated_intensity_no_zero[min_gsqr_ind]))
+		plt.savefig(new_directory + "normI_vs_C_no_zero.png", dpi=80)
+		plt.close()	
+		
+		
+	return
+	
+	
+	
 	
 	
 def make_plots(comparison_with_balogh, wilkens_plot, intensity_vs_n_plot, cos_vs_n_plot, n_range, R_e, s_num, G, s_range):
@@ -560,17 +799,22 @@ def runner():
 	M = 13.5
 	average_defect_density = 1.0e16
 	
-	n_range_guess = np.linspace(1e-20, 5e-7, 1e5) # Used to estimate the range of s values.
-	exponent_cutoff = 1e4 # Controls convergence of integral vs n.
-	samples_per_oscillation = 100.0 # Controls number of points recorded of integral vs n.
+	n_range_guess = np.linspace(1e-20, 5e-7, 1e3) # Used to estimate the range of s values.
+	exponent_cutoff = 1e3 # Controls convergence of integral vs n.
+	samples_per_oscillation = 10.0 # Controls number of points recorded of integral vs n.
 	
 	
 	# Determines which plots are made at the end (the "make_plots" function).
 	comparison_with_balogh = False
 	wilkens_plot = False
 	cos_vs_n_plot = False
-	intensity_vs_n_plot = True
+	intensity_vs_n_plot = False
 
+	# These plots are made in the "estimate_consequences_debye_waller" function.
+	plot_normI_vs_C = True
+	plot_I_vs_C = True
+	plot_I_vs_C_no_zero = True
+	plot_normI_vs_C_no_zero = True
 	
 	 
 	s_range, n_range = build_boundary_profile(M, average_defect_density, s_num, del_s_pernm, exponent_cutoff, samples_per_oscillation, G, B, contrast_factor, n_range_guess, a_lattice) 
@@ -606,12 +850,20 @@ def runner():
 		
 			
 			subprocess.call("mv " + str(os.getcwd()) + "/" + contrast_directory + "/ " + G_directory, shell=True)
+	
+	
+	estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot_I_vs_C, plot_I_vs_C_no_zero, plot_normI_vs_C_no_zero)
+	
 			
 	t_end = time.clock()		
 			
 	t_total = t_end - t_start
+
+	f = open(log_name, "a")
+	f.write("\nDone!\nThe run took " + str(t_total) + " s to complete.")
+	f.close()
 			
-	print "\nDone!\nThe run took " + str(t_total) + " s to complete."
+	print "\nDone!\nThe run took " + str(t_total) + " s to complete.\n"
 		
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
