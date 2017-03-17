@@ -385,7 +385,7 @@ def estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot
 
 	print "\nEstimating consequences of defects on Debye-Waller Temperature measurement..."
 	new_directory = os.getcwd() + "/effect_on_debye_waller/"
-	
+	subprocess.call("rm -r " + new_directory, shell=True)
 	subprocess.call("mkdir " + new_directory, shell=True)
 	
 
@@ -612,10 +612,73 @@ def estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot
 		plt.savefig(new_directory + "normI_vs_C_no_zero.png", dpi=80)
 		plt.close()	
 		
-		
+
+	if plot_I_vs_theta == True:
+
+		plt.figure(figsize=(16,9))
+	
+		for j in range(len(G)):
+
+			colour = np.random.rand(1,3)
+			plt.scatter(contrast_factor, integrated_intensity[j], color=colour, label=G[j])
+			plt.ylabel("Integrated intensity (arb.)")
+			plt.xlabel("Contrast Factor")
+			
+			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity[j])/max(integrated_intensity[j]))	
+
+
+		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(integrated_intensity[max_gsqr_ind])/max(integrated_intensity[max_gsqr_ind]))	)
+		plt.legend(loc="upper right")
+		plt.ylim(0.9*min(integrated_intensity[max_gsqr_ind]), 1.1*max(integrated_intensity[max_gsqr_ind]))
+		plt.savefig(new_directory + "I_vs_C.png", dpi=80)
+		plt.close()	
+	
+	
 	return
 	
 	
+def transform_G_to_angle(G):
+
+	# When theta = pi/2, g and l are perpindicular, and C = 0. When theta = 0, g and l are parallel and C = 0. 
+	# In order to transform contrast to angle, one must first assign a direction with which the sample is facing. In this case, the sample is a single crystal containing only screw dislocations. The sample will be oriented normal to the 001 direction as is conventional. All reflections may now be assigned an angle relative to the 001 vector.
+	
+	reference_direction = [0.0, 0.0, 1.0] 
+	reference_length = np.sqrt( (reference_direction[0] ** 2) + (reference_direction[1] ** 2) + (reference_direction[2] ** 2) )
+
+	print "\nReference direction = (" + str(reference_direction[0]) + ", " + str(reference_direction[1]) + ", " + str(reference_direction[2]) + ")\n"
+	
+	dot_product = [0] * len(G)
+	G_length = [0] * len(G)
+	theta_range = [0] * len(G)
+	
+	for i in range(len(G)):
+
+		G_length[i] = np.sqrt( (G[i][0] ** 2) + (G[i][1] ** 2) + (G[i][2] ** 2) ) 
+		dot_product[i] = np.dot(G[i], reference_direction)
+		theta_range[i] = np.arccos(dot_product[i]/(G_length[i] * reference_length))
+		print "Angle for " + str(int(G[i][0])) + str(int(G[i][1])) + str(int(G[i][2])) + " = " + str(theta_range[i]) + "\n"
+
+	return theta_range
+	
+
+def make_contrast_from_theta_screw(G, theta_range):
+
+	contrast_factor = [0] * len(theta_range)
+	
+	for i in range(len(theta_range)):
+	
+		contrast_factor[i] = (np.cos(theta_range[i]) ** 2) * (np.sin(theta_range[i]) ** 2)
+		print "Contrast factor for " + str(int(G[i][0])) + str(int(G[i][1])) + str(int(G[i][2])) + " = " + str(contrast_factor[i]) + "\n"
+
+
+	return contrast_factor
+	
+	
+def apply_to_debye_waller(file_intensity_profile):
+
+	 #= np.loadtxt(file_intensity_profile)
+
+	return
 	
 	
 	
@@ -790,7 +853,7 @@ def runner():
 
 	calculate_intensities = True
 	
-	contrast_factor = np.linspace(0.0, 0.25, 11)
+	#contrast_factor = np.linspace(0.0, 0.25, 11)
 	G = [[2.0, 0, -2.0], [1.0,1.0,1.0], [0.0, 0.0, 2.0], [2.0,0.0,0.0], [2.0, 2.0,2.0], [1.0,1.0,3.0], [1.0,3.0,3.0], [3.0, 3.0, 3.0], [2.0, 2.0,4.0], [2.0, 4.0, 4.0], [4.0, 4.0, 4.0], [3.0, 3.0, 5.0], [3.0, 5.0, 5.0], [5.0, 5.0, 5.0]]
 	B = [0.5, 0, -0.5]
 	a_lattice = 3.615e-10
@@ -816,7 +879,11 @@ def runner():
 	plot_I_vs_C_no_zero = True
 	plot_normI_vs_C_no_zero = True
 	
-	 
+	theta_range = transform_G_to_angle(G)
+	contrast_factor = make_contrast_from_theta_screw(G, theta_range)
+	
+	exit()
+	
 	s_range, n_range = build_boundary_profile(M, average_defect_density, s_num, del_s_pernm, exponent_cutoff, samples_per_oscillation, G, B, contrast_factor, n_range_guess, a_lattice) 
 	
 	
