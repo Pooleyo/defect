@@ -301,8 +301,7 @@ def intensity(n_range, s_range,  G, B, a_lattice, contrast_factor, average_defec
 
 	print "\nCreating intensity profile for G = " + str(int(G[0])) + str(int(G[1])) + str(int(G[2])) + ", C = " + str(contrast_factor)
 
-	dn = n_range[1] - n_range[0]
-	ds = 
+	dn = n_range[1] - n_range[0] 
 	
 	print "Low eta = " + str(eta_2(R_e, n_range[0])) + ""
 	print "High eta = " + str(eta_2(R_e, n_range[-1])) + "\n"
@@ -330,7 +329,7 @@ def intensity(n_range, s_range,  G, B, a_lattice, contrast_factor, average_defec
 			
 			evaluation = A(n_range[j], G, B, a_lattice, contrast_factor, average_defect_density, R_e) * cos[i][j]
 
-			intensity_at_n[i][j] = 2 * dn * evaluation # The 2 here is not an error, it is completely separate to the integral.
+			intensity_at_n[i][j] = 2 * dn * evaluation # The 2 here is not an error, it is outside the integral.
 
 			
 		datafile_intensity_vs_n = "intensity_vs_n@S=" + str(s_range[i]) + ".dat"
@@ -477,8 +476,18 @@ def estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_nor
 			plt.show()
 			plt.close()
 			"""
-			integrated_intensity[j][i] = sum(intensity[j][i])
+			
+			ds = abs(full_peak_s[j][i][0] - full_peak_s[j][i][1])
+			
+			print "ds = " + str(ds)
+						
+
+			integrated_intensity[j][i] = sum(intensity[j][i]) * ds
 			norm_integrated_intensity[j][i] = integrated_intensity[j][i]/max(integrated_intensity[j])
+			
+			print integrated_intensity
+			print "\n\n\n"
+			print norm_integrated_intensity
 			#intensity_over_hwhm[j][i] = abs(integrated_intensity[j][i]/hwhm[j][i])
 
 		
@@ -499,7 +508,7 @@ def estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_nor
 			plt.ylabel("Normalised integrated intensity (arb.)")
 			plt.xlabel("Contrast Factor")
 			
-			print "Min(norm_intensity)/max(norm_intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(norm_integrated_intensity[j])/max(norm_integrated_intensity[j]))	
+			#print "Min(norm_intensity)/max(norm_intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(norm_integrated_intensity[j])/max(norm_integrated_intensity[j]))	
 
 
 		plt.title( "Min(norm_intensity)/max(norm_intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(norm_integrated_intensity[max_gsqr_ind])/max(norm_integrated_intensity[max_gsqr_ind]))	)
@@ -522,7 +531,7 @@ def estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_nor
 			plt.ylabel("Integrated intensity (arb.)")
 			plt.xlabel("Contrast Factor")
 			
-			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity[j])/max(integrated_intensity[j]))	
+			#print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity[j])/max(integrated_intensity[j]))	
 
 
 		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(integrated_intensity[max_gsqr_ind])/max(integrated_intensity[max_gsqr_ind]))	)
@@ -550,16 +559,17 @@ def estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_nor
 				integrated_intensity_no_zero[j] = integrated_intensity[j]
 				
 			else:
+				I = list(integrated_intensity[j])
+				integrated_intensity_no_zero[j] = I
 
-				integrated_intensity_no_zero[j] = np.delete(integrated_intensity[j], max(integrated_intensity[j]) )
-
-
+				var_1 = max(integrated_intensity[j])
+				integrated_intensity_no_zero[j].remove(var_1)
 
 			plt.scatter(contrast_factor_no_zero, integrated_intensity_no_zero[j], color=colour, label=G[j])
 			plt.ylabel("Integrated intensity (arb.)")
 			plt.xlabel("Contrast Factor")
 			
-			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity_no_zero[j])/max(integrated_intensity_no_zero[j]))	
+			#print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity_no_zero[j])/max(integrated_intensity_no_zero[j]))	
 
 
 		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(integrated_intensity_no_zero[max_gsqr_ind])/max(integrated_intensity_no_zero[max_gsqr_ind]))	)
@@ -587,24 +597,27 @@ def estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_nor
 				norm_integrated_intensity_no_zero[j] = integrated_intensity[j]
 				
 			else:
+				I = list(integrated_intensity[j])
+				norm_integrated_intensity_no_zero[j] = I
+				print norm_integrated_intensity_no_zero[j]
+				var_1 = max(integrated_intensity[j])
+				norm_integrated_intensity_no_zero[j].remove(var_1)
+			print norm_integrated_intensity_no_zero[j]
 
-				norm_integrated_intensity_no_zero[j] = np.delete(integrated_intensity[j], max(integrated_intensity[j]) )
-
-			print norm_integrated_intensity_no_zero
 			
 			normalise_constant = max(norm_integrated_intensity_no_zero[j])
 
 			for i in range(len(norm_integrated_intensity_no_zero[j])):
 
 				norm_integrated_intensity_no_zero[j][i] = norm_integrated_intensity_no_zero[j][i]/normalise_constant
-				
-			print norm_integrated_intensity_no_zero
+
+			print norm_integrated_intensity_no_zero[j]
 
 			plt.scatter(contrast_factor_no_zero, norm_integrated_intensity_no_zero[j], color=colour, label=G[j])
 			plt.ylabel("Normalised integrated intensity (arb.)")
 			plt.xlabel("Contrast Factor")
 			
-			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(norm_integrated_intensity_no_zero[j])/max(norm_integrated_intensity_no_zero[j]))	
+			#print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(norm_integrated_intensity_no_zero[j])/max(norm_integrated_intensity_no_zero[j]))	
 
 
 		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(norm_integrated_intensity_no_zero[max_gsqr_ind])/max(norm_integrated_intensity_no_zero[max_gsqr_ind])) )
@@ -625,7 +638,7 @@ def estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_nor
 			plt.ylabel("Integrated intensity (arb.)")
 			plt.xlabel("Theta")
 			
-			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity[j])/max(integrated_intensity[j]))	
+			#print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity[j])/max(integrated_intensity[j]))	
 
 
 		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(integrated_intensity[max_gsqr_ind])/max(integrated_intensity[max_gsqr_ind]))	)
@@ -854,7 +867,7 @@ def runner():
 
 	calculate_intensities = True
 	
-	#contrast_factor = np.linspace(0.0, 0.25, 11)
+	contrast_factor = np.linspace(0.0, 0.25, 11)
 	G = [[2.0, 0, -2.0], [1.0,1.0,1.0], [0.0, 0.0, 2.0], [2.0,0.0,0.0], [2.0, 2.0,2.0], [1.0,1.0,3.0], [1.0,3.0,3.0], [3.0, 3.0, 3.0], [2.0, 2.0,4.0], [2.0, 4.0, 4.0], [4.0, 4.0, 4.0], [3.0, 3.0, 5.0], [3.0, 5.0, 5.0], [5.0, 5.0, 5.0]]
 	B = [0.5, 0, -0.5]
 	a_lattice = 3.615e-10
@@ -879,10 +892,10 @@ def runner():
 	plot_I_vs_C = True
 	plot_I_vs_C_no_zero = True
 	plot_normI_vs_C_no_zero = True
-	plot_I_vs_theta = True
+	plot_I_vs_theta = False
 	
 	theta_range = transform_G_to_angle(G)
-	contrast_factor = make_contrast_from_theta_screw(G, theta_range)
+	#contrast_factor = make_contrast_from_theta_screw(G, theta_range)
 	
 	
 	s_range, n_range = build_boundary_profile(M, average_defect_density, s_num, del_s_pernm, exponent_cutoff, samples_per_oscillation, G, B, contrast_factor, n_range_guess, a_lattice) 
