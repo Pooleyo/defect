@@ -302,6 +302,7 @@ def intensity(n_range, s_range,  G, B, a_lattice, contrast_factor, average_defec
 	print "\nCreating intensity profile for G = " + str(int(G[0])) + str(int(G[1])) + str(int(G[2])) + ", C = " + str(contrast_factor)
 
 	dn = n_range[1] - n_range[0]
+	ds = 
 	
 	print "Low eta = " + str(eta_2(R_e, n_range[0])) + ""
 	print "High eta = " + str(eta_2(R_e, n_range[-1])) + "\n"
@@ -329,7 +330,7 @@ def intensity(n_range, s_range,  G, B, a_lattice, contrast_factor, average_defec
 			
 			evaluation = A(n_range[j], G, B, a_lattice, contrast_factor, average_defect_density, R_e) * cos[i][j]
 
-			intensity_at_n[i][j] = dn * evaluation
+			intensity_at_n[i][j] = 2 * dn * evaluation # The 2 here is not an error, it is completely separate to the integral.
 
 			
 		datafile_intensity_vs_n = "intensity_vs_n@S=" + str(s_range[i]) + ".dat"
