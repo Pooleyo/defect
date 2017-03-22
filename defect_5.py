@@ -15,7 +15,7 @@ import os
 from scipy import integrate
 
 log_name = "log.defect"
-program_name = "defect_3.py"
+program_name = "defect_5.py"
 
 
 
@@ -329,7 +329,7 @@ def intensity(n_range, s_range,  G, B, a_lattice, contrast_factor, average_defec
 			
 			evaluation = A(n_range[j], G, B, a_lattice, contrast_factor, average_defect_density, R_e) * cos[i][j]
 
-			intensity_at_n[i][j] = 2 * dn * evaluation
+			intensity_at_n[i][j] = dn * evaluation
 
 			
 		datafile_intensity_vs_n = "intensity_vs_n@S=" + str(s_range[i]) + ".dat"
@@ -381,7 +381,7 @@ def intensity(n_range, s_range,  G, B, a_lattice, contrast_factor, average_defec
 
 
 # Creates an approximation of the possible effect of the intensity profile on the Debye-Waller effect. This is done by reading in the intensity vs S data for each plot, and simulating 
-def estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot_I_vs_C, plot_I_vs_C_no_zero, plot_normI_vs_C_no_zero):
+def estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_normI_vs_C, plot_I_vs_C, plot_I_vs_C_no_zero, plot_normI_vs_C_no_zero, plot_I_vs_theta):
 
 	print "\nEstimating consequences of defects on Debye-Waller Temperature measurement..."
 	new_directory = os.getcwd() + "/effect_on_debye_waller/"
@@ -620,9 +620,9 @@ def estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot
 		for j in range(len(G)):
 
 			colour = np.random.rand(1,3)
-			plt.scatter(contrast_factor, integrated_intensity[j], color=colour, label=G[j])
+			plt.scatter(theta_range, integrated_intensity[j], color=colour, label=G[j])
 			plt.ylabel("Integrated intensity (arb.)")
-			plt.xlabel("Contrast Factor")
+			plt.xlabel("Theta")
 			
 			print "Min(intensity)/max(intensity) for " + str(int(G[j][0])) +str(int(G[j][1])) + str(int(G[j][2])) + " = " + str(min(integrated_intensity[j])/max(integrated_intensity[j]))	
 
@@ -630,7 +630,7 @@ def estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot
 		plt.title( "Min(intensity)/max(intensity) for " + str(int(G[max_gsqr_ind][0])) +str(int(G[max_gsqr_ind][1])) + str(int(G[max_gsqr_ind][2])) + " = " + str(min(integrated_intensity[max_gsqr_ind])/max(integrated_intensity[max_gsqr_ind]))	)
 		plt.legend(loc="upper right")
 		plt.ylim(0.9*min(integrated_intensity[max_gsqr_ind]), 1.1*max(integrated_intensity[max_gsqr_ind]))
-		plt.savefig(new_directory + "I_vs_C.png", dpi=80)
+		plt.savefig(new_directory + "I_vs_theta.png", dpi=80)
 		plt.close()	
 	
 	
@@ -878,11 +878,11 @@ def runner():
 	plot_I_vs_C = True
 	plot_I_vs_C_no_zero = True
 	plot_normI_vs_C_no_zero = True
+	plot_I_vs_theta = True
 	
 	theta_range = transform_G_to_angle(G)
 	contrast_factor = make_contrast_from_theta_screw(G, theta_range)
 	
-	exit()
 	
 	s_range, n_range = build_boundary_profile(M, average_defect_density, s_num, del_s_pernm, exponent_cutoff, samples_per_oscillation, G, B, contrast_factor, n_range_guess, a_lattice) 
 	
@@ -919,7 +919,7 @@ def runner():
 			subprocess.call("mv " + str(os.getcwd()) + "/" + contrast_directory + "/ " + G_directory, shell=True)
 	
 	
-	estimate_consequences_debye_waller(G, contrast_factor, plot_normI_vs_C, plot_I_vs_C, plot_I_vs_C_no_zero, plot_normI_vs_C_no_zero)
+	estimate_consequences_debye_waller(G, contrast_factor, theta_range, plot_normI_vs_C, plot_I_vs_C, plot_I_vs_C_no_zero, plot_normI_vs_C_no_zero, plot_I_vs_theta)
 	
 			
 	t_end = time.clock()		
